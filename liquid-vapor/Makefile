@@ -8,4 +8,5 @@ traj.lammpstrj : in.spce.txt data.spce.old.txt
 .PHONY : clean
 clean :
 	rm -rf log.*
-	rm -rf traj.lammpstrj data.spce.new.txt rst.spce.new.bin
+	rm -rf data.spce.new.txt rst.spce.new.bin
+	rm -rf traj.lammpstrj confout.lammpstrj
