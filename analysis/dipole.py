@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 
 # Check correct version of python
@@ -18,17 +18,38 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 
-
-
 ###############
 #Entry point:
 ###############
 
 
+def load_traj(top_file, traj_file):
+    """
+    Load trajectory from a file and return it as instance of MDAnalysis
+
+    Parameters
+    ----------
+    traj_file : str
+                trajectory file name (traj.xtc, trj.dcd, trj.xyz)
+    top_file : str
+                topology file name (data.topol.txt)
+
+    Returns
+    -------
+    u : MDAnalysis.Universe
+    """
+    try:
+        u = MDAnalysis.Universe(top_file, traj_file, topology_format="DATA",
+                                format="LAMMPS")
+    except:
+        raise IOError("No such file or directory: " + top_file + " or " + traj_file)
+    return u
+
 #load topology and trajectory
 topFname="../liquid-vapor/data.spce.old.txt"    #topology_format="DATA"
 trajFname="../liquid-vapor/traj.dcd"            #format="LAMMPS"
-u = MDAnalysis.Universe(topFname, trajFname, topology_format="DATA", format="LAMMPS")
+u = load_traj(topFname, trajFname)
+
 all_atoms = u.select_atoms("all")
 
 mu_history=[]
