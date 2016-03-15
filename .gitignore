@@ -2,3 +2,4 @@ log.*
 traj.*
 *.bin
 *.new.*
+confout.*
