@@ -34,17 +34,12 @@ fix   2 all nvt temp 300.0 300.0 200.0
 thermo_style    one
 thermo    100
 
-
-#dump  1 all xtc 100 traj.xtc
-dump  1 all custom 100 traj.lammpstrj id mol type x y z ix iy iz 
-
-
-
 #Stadardised output for easy loading by analysis scripts
 #LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
+dump  1 all custom 100 traj.lammpstrj id mol type x y z ix iy iz 
 dump  2 all dcd 100 traj.dcd
-dump  3 all xtc 100 traj.xtc
-dump  4 all xyz 100 traj.xyz
+#dump  3 all xtc 100 traj.xtc
+#dump  4 all xyz 100 traj.xyz
 
 #for point dipoles, when they are used, dump custom will be needed to save the dipole magnitudes and directions
 #This will require a custom parser to read, but is needed to get info about point dipoles
