@@ -3,3 +3,4 @@ traj.*
 *.bin
 *.new.*
 confout.*
+*.png
