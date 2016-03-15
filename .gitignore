@@ -1,0 +1,4 @@
+log.*
+traj.*
+*.bin
+*.new.*
