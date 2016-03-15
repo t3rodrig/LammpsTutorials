@@ -1,8 +1,21 @@
 #!/usr/bin/env python
+from __future__ import print_function, division
+import sys
+
+# Check correct version of python
+if sys.version >= '3':
+    raise Exception("Error: MDAnalysis can't run right now under Python 3 \n" +
+    "https://github.com/MDAnalysis/mdanalysis/wiki/GSoC-2016-Project-Ideas \n")
+
+try:
+    import MDAnalysis
+except ImportError:
+    raise ImportError("Detailed information on how to install MDAnalysis " +
+        " can be found on the official website:\n" +
+        "https://github.com/MDAnalysis/mdanalysis/wiki/Install \n" )
 
 import numpy as np
 import scipy as sp
-import MDAnalysis
 import matplotlib.pyplot as plt
 
 
@@ -32,8 +45,8 @@ mu_history=np.array(mu_history)
 max_mu=np.amax(mu_history)
 min_mu=np.amin(mu_history)
 avg=np.mean(mu_history)
-print "<mu>=",avg,"Debye"
-print "<mu^2>=",np.mean(mu_history**2),"Debye"
+print("<mu>=",avg,"Debye")
+print("<mu^2>=",np.mean(mu_history**2),"Debye")
 
 
 step = 10    #spacing between points on the histogram in Debye
