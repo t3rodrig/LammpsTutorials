@@ -21,8 +21,6 @@ angle_coeff 1 100.0 109.47
 
 special_bonds   lj/coul 0.0 0.0 0.5
 
-#read_data spce.data.old
-
 neighbor        2.0 bin
 neigh_modify  every 1 delay 0 check yes
 
@@ -33,6 +31,7 @@ fix   2 all nvt temp 300.0 300.0 200.0
 
 thermo_style    one
 thermo    100
+#thermo    10000
 
 #Stadardised output for easy loading by analysis scripts
 #LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
@@ -47,6 +46,7 @@ dump  2 all dcd 100 traj.dcd
 
 #Short run to generate some output we can analyze
 run   $(5e4)
+#run   $(5e6)
 #run 0
 
 write_dump all atom confout.lammpstrj modify scale no sort id
