@@ -14,7 +14,7 @@
 
  0.000 40.310  xlo xhi
  0.000 40.310  ylo yhi
- 0.000 80.620  zlo zhi
+ 0.000 40.310  zlo zhi
 
  Masses
 

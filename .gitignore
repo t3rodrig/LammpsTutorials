@@ -4,3 +4,4 @@ traj.*
 *.new.*
 confout.*
 *.png
+*.xyz

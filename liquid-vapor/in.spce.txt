@@ -23,7 +23,7 @@ special_bonds   lj/coul 0.0 0.0 0.5
 
 #read_data spce.data.old
 
-neighbor        2.0 bin
+neighbor        5.0 bin
 neigh_modify  every 1 delay 0 check yes
 
 timestep  2.0
@@ -38,6 +38,7 @@ thermo    100
 
 #Stadardised output for easy loading by analysis scripts
 #LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
+write_dump all xyz init.xyz modify sort id element O H                 #save a 1 frame xyz file to be able to load topology in VMD
 dump  1 all custom 100 traj.lammpstrj id mol type x y z ix iy iz 
 dump  2 all dcd 100 traj.dcd
 #dump  3 all xtc 100 traj.xtc
