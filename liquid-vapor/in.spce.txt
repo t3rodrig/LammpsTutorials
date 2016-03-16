@@ -1,5 +1,4 @@
 # SPC/E water box 
-
 units   real  
 atom_style  full
 
@@ -33,12 +32,21 @@ fix   1 all shake 0.0001 20 0 b 1 a 1
 fix   2 all nvt temp 300.0 300.0 200.0
 
 thermo_style    one
-thermo    10000
+thermo    100
 
-#dump  1 all xtc 1000 traj.xtc
-dump	1 all custom 1000 traj.lammpstrj id mol type x y z ix iy iz
+#Stadardised output for easy loading by analysis scripts
+#LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
+dump  1 all custom 100 traj.lammpstrj id mol type x y z ix iy iz 
+dump  2 all dcd 100 traj.dcd
+#dump  3 all xtc 100 traj.xtc
+#dump  4 all xyz 100 traj.xyz
 
-run   $(5e6)
+#for point dipoles, when they are used, dump custom will be needed to save the dipole magnitudes and directions
+#This will require a custom parser to read, but is needed to get info about point dipoles
+#dump 5 all custom 100 traj.txt id mol type x y z ix iy iz q mux muy muz mu
+
+#Short run to generate some output we can analyze
+run   $(5e4)
 #run 0
 
 write_dump all atom confout.lammpstrj modify scale no sort id
