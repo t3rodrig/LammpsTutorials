@@ -56,7 +56,14 @@ mu_history=[]
 #itterate through frames
 for ts in u.trajectory:
     #calculate the total dipole moment of the simulation cell
-    temp=np.multiply(all_atoms.charges[:,np.newaxis], all_atoms.coordinates()) #Q*r
+    
+    com=all_atoms.center_of_mass(pbc=true)  #wrap all atoms into box and return the center of mass
+    shift=u.dimensions*0.5 - com
+    coords=all_atoms.coordinates()          #coordinates of the atoms, passed by reference
+    coords+=shift                           #center com in box so that liquid doesn't drift on z-axis
+    all_atoms.pack_into_box()               #rewrap if any atoms moved outside box beacuse of centering
+        
+    temp=np.multiply(all_atoms.charges[:,np.newaxis], coords) #Q*r
     mu=np.sum(temp, axis=0) #sum(Q*r)
     muMag=np.linalg.norm(mu)/0.20819434 #magnitude in Debye
     mu_history.append(muMag)
