@@ -24,10 +24,6 @@ import copy
 CURSOR_UP_ONE = '\x1b[1A'
 ERASE_LINE = '\x1b[2K'
 
-###############
-#Entry point:
-###############
-
 
 def load_traj(top_file, traj_file):
     """
@@ -51,12 +47,19 @@ def load_traj(top_file, traj_file):
         raise IOError("No such file or directory: " + top_file + " or " + traj_file)
     return u
 
+
+###############
+#Entry point:
+###############
+
 #load topology and trajectory
 topFname="data.spce.old.txt"    #topology_format="DATA"
 trajFname="traj.dcd"            #format="LAMMPS"
 u = load_traj(topFname, trajFname)
 
 all_atoms = u.select_atoms("all")
+
+print("Calculating properties of the whole simulation cell:")
 
 mu_history=[]
 sumV=0
@@ -127,8 +130,9 @@ plt.close(fig)
 
 #Calculate avg molecular dipole moments as a function of the z-slice.
 #We need groups of individual molecules for this
-print("Calculating molecular properties for each z-slice.")
-Nslices=100
+print("\nCalculating molecular properties for each z-slice.")
+Nslices=50
+Nframes=0
 sliceW= u.dimensions[2]/Nslices #in Angstroms
 W_res = all_atoms.residues #list of residue IDs
 slice_mu=np.zeros(Nslices)
@@ -143,7 +147,8 @@ print("There are", len(W_res), "molecules.\n")
     
 #analyse trajectory
 for ts in u.trajectory:
-    if(ts.frame%100!=0): continue
+    #if(ts.frame%100!=0): continue  #use for debug to make code skip frames
+    Nframes+= 1
     print((CURSOR_UP_ONE + ERASE_LINE),"Processing frame",ts.frame,"of",len(u.trajectory))
     
     #for molecular dipole moment, molecules have to be wrapped so they stay together
@@ -175,9 +180,8 @@ with np.errstate(divide='ignore', invalid='ignore'):
 #z-coordinates of the centers of the z-slices
 z=np.linspace(sliceW*0.5, u.dimensions[2]+sliceW*0.5, num=Nslices, endpoint=False)
 
-#plot
-fig2 = plt.figure(figsize=(4,6), dpi=300)
-#fig2 = plt.figure()
+#plot dipole_z_slice
+fig2 = plt.figure(figsize=(6,8), dpi=300)
 plt.suptitle("Molecular Dipole Moment Properties at Different Z-slices")
 ax1 = fig2.add_subplot(2,1,1) #2 rows, 1 column, plot number 1
 ax1.set_xlabel('Z-slice (A)')
@@ -189,8 +193,28 @@ ax2.set_xlabel('Z-slice (A)')
 ax2.set_ylabel(r'<$\mu_{z \, mol}$> (Debye)')
 ax2.plot(z, slice_mu_z, '-')
 
-plt.tight_layout(pad=1.0, w_pad=1.0, h_pad=1.0)
+plt.tight_layout(pad=1.0, w_pad=3.0, h_pad=1.0, rect=(0,0,1,0.95))
 fig2.savefig("dipole_z_slice.png")
 plt.close(fig2)
+
+#plot density_z_slice
+fig3 = plt.figure(figsize=(6,8), dpi=300)
+plt.suptitle("Density at Different Z-slices")
+ax1 = fig3.add_subplot(211)
+ax1.set_xlabel('Z-slice (A)')
+ax1.set_ylabel('<Number of Molecules>')
+avg_slice_mol_count=slice_mol_count/Nframes
+ax1.plot(z, avg_slice_mol_count, '-')
+
+ax2 = fig3.add_subplot(2,1,2) #2 rows, 1 column, plot number 2
+ax2.set_xlabel('Z-slice (A)')
+ax2.set_ylabel(r'<Density> (g/cm${}^3$)')
+volume*=1e+6    #volume is in m^3, need it in cm ^3
+rho=(avg_slice_mol_count*18.01528/6.0221409e+23)/(volume/(Nslices)) #density in g/cm^3
+ax2.plot(z, rho, '-')
+
+plt.tight_layout(pad=1.0, w_pad=3.0, h_pad=1.0, rect=(0,0,1,0.95))
+fig3.savefig("density_z_slice.png")
+plt.close(fig)
 
 exit()
