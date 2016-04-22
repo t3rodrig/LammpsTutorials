@@ -49,7 +49,7 @@ dump  2 all dcd 100 traj.dcd
 #dump 5 all custom 100 traj.txt id mol type x y z ix iy iz q mux muy muz mu
 
 #Short run to generate some output we can analyze
-run   $(5e5)
+run   $(5e6)
 #run 0
 
 write_dump all atom confout.lammpstrj modify scale no sort id

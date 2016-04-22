@@ -16,6 +16,8 @@ except ImportError:
 
 import numpy as np
 import scipy as sp
+import matplotlib
+matplotlib.use('Agg') #don't create a tk window to show figures. Just save them as files.
 import matplotlib.pyplot as plt
 import copy
 
@@ -50,13 +52,14 @@ def load_traj(top_file, traj_file):
     return u
 
 #load topology and trajectory
-topFname="../liquid-vapor/data.spce.old.txt"    #topology_format="DATA"
-trajFname="../liquid-vapor/traj.dcd"            #format="LAMMPS"
+topFname="data.spce.old.txt"    #topology_format="DATA"
+trajFname="traj.dcd"            #format="LAMMPS"
 u = load_traj(topFname, trajFname)
 
 all_atoms = u.select_atoms("all")
 
 mu_history=[]
+sumV=0
 #itterate through frames
 for ts in u.trajectory:
     #calculate the total dipole moment of the simulation cell
@@ -72,13 +75,27 @@ for ts in u.trajectory:
     muMag=np.linalg.norm(mu)/0.20819434 #magnitude in Debye
     mu_history.append(muMag)
 
+    sumV+=ts.volume
+
 #build histogram
 mu_history=np.array(mu_history)
 max_mu=np.amax(mu_history)
 min_mu=np.amin(mu_history)
 avg=np.mean(mu_history)
-print("<mu>=",avg,"Debye")
-print("<mu^2>=",np.mean(mu_history**2),"Debye")
+print("\tTotal Cell dipole moment:")
+print("<mu> =",avg,"Debye")
+print("<mu^2> =",np.mean(mu_history**2),"Debye")
+
+#find dielectric constant
+#this is from: http://www.tandfonline.com/doi/abs/10.1080/00268978300102721
+#as implemented in Gromacs 4.7.?
+temp=300 #K
+eps0=8.854187817e-12 # epsilon_0 in C^2 J^-1 m^-1
+volume=sumV*1e-30/mu_history.shape[0] #in m^3
+kb = 1.38064852e-23  # Boltzmann constant in m^2 kg/(s^2 K)
+fac= 1.112650021e-59 # converts Debye^2 to C^2 m^2
+epsilon=1+((avg**2 - np.mean(mu_history**2))*fac/(3.0*eps0*volume*kb*temp))
+print("epsilon =",np.mean(mu_history**2)," assuming temp =",temp,"K")
 
 
 step = 10    #spacing between points on the histogram in Debye
@@ -96,6 +113,7 @@ for mu in mu_history:
 
 
 #draw and save plot
+plt.ioff()
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.set_xlabel('Total Dipole Moment (Debye)')
@@ -103,7 +121,7 @@ ax.set_ylabel('Number of Occurances')
 ax.plot(x, histogram, '-')
 
 fig.savefig("dipole.png")
-
+plt.close(fig)
 
 
 
@@ -125,6 +143,7 @@ print("There are", len(W_res), "molecules.\n")
     
 #analyse trajectory
 for ts in u.trajectory:
+    if(ts.frame%100!=0): continue
     print((CURSOR_UP_ONE + ERASE_LINE),"Processing frame",ts.frame,"of",len(u.trajectory))
     
     #for molecular dipole moment, molecules have to be wrapped so they stay together
@@ -157,9 +176,8 @@ with np.errstate(divide='ignore', invalid='ignore'):
 z=np.linspace(sliceW*0.5, u.dimensions[2]+sliceW*0.5, num=Nslices, endpoint=False)
 
 #plot
-plt.tight_layout(pad=1.0, w_pad=1.0, h_pad=1.0)
 fig2 = plt.figure(figsize=(4,6), dpi=300)
-fig2 = plt.figure()
+#fig2 = plt.figure()
 plt.suptitle("Molecular Dipole Moment Properties at Different Z-slices")
 ax1 = fig2.add_subplot(2,1,1) #2 rows, 1 column, plot number 1
 ax1.set_xlabel('Z-slice (A)')
@@ -171,6 +189,8 @@ ax2.set_xlabel('Z-slice (A)')
 ax2.set_ylabel(r'<$\mu_{z \, mol}$> (Debye)')
 ax2.plot(z, slice_mu_z, '-')
 
+plt.tight_layout(pad=1.0, w_pad=1.0, h_pad=1.0)
 fig2.savefig("dipole_z_slice.png")
+plt.close(fig2)
 
 exit()

@@ -5,3 +5,4 @@ traj.*
 confout.*
 *.png
 *.xyz
+analysis/*.txt
