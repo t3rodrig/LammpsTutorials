@@ -50,7 +50,8 @@ def load_traj(top_file, traj_file):
 ###############
 
 #parse arguments
-parser=ap.ArgumentParser(description="Removes center of mass motion form trajectory by centering each frame in the simulation box.")
+parser=ap.ArgumentParser(description="Removes center of mass motion form trajectory by centering each frame in the simulation box.",
+                         formatter_class=ap.ArgumentDefaultsHelpFormatter) #better help
 parser.add_argument("-p","--topology", type=str,default="../liquid-vapor/data.spce.old.txt",help="Input topology file readable by MDAnalysis.")
 parser.add_argument('-t',"--trajectory", type=str,default="../liquid-vapor/traj.dcd",help="Input trajectory file readable by MDAnalysis.")
 parser.add_argument('-o',"--output", type=str,default="traj_centered.dcd",help="Output trajectory file writable by MDAnalysis.")
