@@ -20,6 +20,7 @@ import matplotlib
 matplotlib.use('Agg') #don't create a tk window to show figures. Just save them as files.
 import matplotlib.pyplot as plt
 import copy
+import argparse as ap
 
 CURSOR_UP_ONE = '\x1b[1A'
 ERASE_LINE = '\x1b[2K'
@@ -52,10 +53,17 @@ def load_traj(top_file, traj_file):
 #Entry point:
 ###############
 
+#parse arguments
+parser=ap.ArgumentParser(description="Analyzes and plots a number of properties as a function of z-slice.",
+                         formatter_class=ap.ArgumentDefaultsHelpFormatter) #better help
+parser.add_argument("-p","--topology", type=str,default="../liquid-vapor/data.spce.old.txt",help="Input topology file readable by MDAnalysis.")
+parser.add_argument('-t',"--trajectory", type=str,default="traj_centered.dcd",help="Input trajectory file readable by MDAnalysis.")
+parser.add_argument('-s',"--skip", type=int,default=1,help="Process every nth frame of the trajectory")
+args=parser.parse_args()
+
+
 #load topology and trajectory
-topFname="data.spce.old.txt"    #topology_format="DATA"
-trajFname="traj.dcd"            #format="LAMMPS"
-u = load_traj(topFname, trajFname)
+u = load_traj(args.topology, args.trajectory)
 
 all_atoms = u.select_atoms("all")
 
@@ -145,15 +153,14 @@ for res in W_res:
     mols.append(all_atoms.select_atoms("resid %d"%res.id))
 print("There are", len(W_res), "molecules.\n")
     
-#analyse trajectory
+#analyze trajectory
 for ts in u.trajectory:
-    #if(ts.frame%100!=0): continue  #use for debug to make code skip frames
+    if(ts.frame%args.skip!=0): continue  #use for debug to make code skip frames
     Nframes+= 1
     print((CURSOR_UP_ONE + ERASE_LINE),"Processing frame",ts.frame,"of",len(u.trajectory))
     
     #for molecular dipole moment, molecules have to be wrapped so they stay together
     all_atoms.wrap(compound='residues', center='com')
-    #TODO: make center of mass stay at center of box to avoid drift on z-axis
     
     for grp in mols:
         com = grp.center_of_mass() #this determined which slice the molecule is in
