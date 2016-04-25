@@ -146,12 +146,16 @@ W_res = all_atoms.residues #list of residue IDs
 slice_mu=np.zeros(Nslices)
 slice_mu_z=np.zeros(Nslices)
 slice_mol_count=np.zeros(Nslices, dtype=int)
+right_movement=np.zeros(Nslices, dtype=int)
+left_movement=np.zeros(Nslices, dtype=int)
+
 
 #precache molecules. This is slow and we don't want to do it every time step
 mols=[]
 for res in W_res:
     mols.append(all_atoms.select_atoms("resid %d"%res.id))
 print("There are", len(W_res), "molecules.\n")
+lastSliceID=np.zeros(len(mols), dtype=int)
     
 #analyze trajectory
 for ts in u.trajectory:
@@ -162,9 +166,17 @@ for ts in u.trajectory:
     #for molecular dipole moment, molecules have to be wrapped so they stay together
     all_atoms.wrap(compound='residues', center='com')
     
-    for grp in mols:
+    for i in range(len(mols)):
+        grp=mols[i]
         com = grp.center_of_mass() #this determined which slice the molecule is in
         sliceID=int(com[2]/sliceW)
+        if(ts>100): #no lastSliceID in first frame
+            if(lastSliceID[i] < sliceID):
+                right_movement[lastSliceID[i]]+=1
+            if(lastSliceID[i] > sliceID):
+                left_movement[lastSliceID[i]]+=1
+            lastSliceID[i] = sliceID
+            
         
         #compute molecular dipole in Debye
         mol_mu=np.sum(np.multiply(grp.charges[:,np.newaxis], grp.coordinates()), axis=0)/0.20819434
@@ -222,6 +234,18 @@ ax2.plot(z, rho, '-')
 
 plt.tight_layout(pad=1.0, w_pad=3.0, h_pad=1.0, rect=(0,0,1,0.95))
 fig3.savefig("density_z_slice.png")
-plt.close(fig)
+plt.close(fig3)
+
+
+#plot movent of molecules left and right along the z-axis
+fig4 = plt.figure(figsize=(6,8), dpi=300)
+plt.suptitle("Water movenent right and left of last Z-slice")
+ax1 = fig4.add_subplot(111)
+ax1.set_xlabel('Z-slice (A)')
+ax1.set_ylabel('<Total Number of Molecules Moved>')
+ax1.plot(z, right_movement, 'r-', z, left_movement, 'b--')
+
+fig4.savefig("movement_z_slice.png")
+plt.close(fig4)
 
 exit()
