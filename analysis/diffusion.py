@@ -61,7 +61,7 @@ parser.add_argument("-p","--topology", type=str,default="../liquid-vapor/data.sp
 parser.add_argument('-t',"--trajectory", type=str,default="traj_centered.dcd",help="Input trajectory file readable by MDAnalysis.")
 parser.add_argument('-s',"--skip", type=int,default=1,help="Process every nth frame of the trajectory")
 parser.add_argument('-dt',"--timestep", type=float,default=0.002,help="Timestep in ps.")
-parser.add_argument('-l',"--autocorlen", type=float,default=100,help="Length of autocorelations in frames. Reference frames are taken every this many frames.")
+parser.add_argument('-l',"--autocorlen", type=float,default=250,help="Length of autocorelations in frames. Reference frames are taken every this many frames.")
 args=parser.parse_args()
 
 
@@ -71,10 +71,8 @@ u = load_traj(args.topology, args.trajectory)
 all_atoms = u.select_atoms("all")
 
 
-#Calculate avg molecular dipole moments as a function of the z-slice.
-#We need groups of individual molecules for this
 print("\nCalculating molecular properties for each z-slice.")
-Nslices=20
+Nslices=100
 sliceW = u.dimensions[2]/Nslices #in Angstroms
 oxygens=u.select_atoms("type 1")
 
@@ -95,8 +93,8 @@ lastpos=0
 refvel=0
 k=0
 #analyze trajectory
+#for ts in u.trajectory[:int(len(u.trajectory)/100):args.skip]: #degug: analyze only the start of trajectory
 for ts in u.trajectory[::args.skip]:
-    #if(ts.frame%args.skip!=0): continue  #use for debug to make code skip frames
     print((CURSOR_UP_ONE + ERASE_LINE),"Processing frame",ts.frame,"of",len(u.trajectory))
 
     pos=oxygens.get_positions()
@@ -104,11 +102,18 @@ for ts in u.trajectory[::args.skip]:
         first=False
         lastpos=copy.deepcopy(pos)
         continue
-        
-    vel = (lastpos-pos)/(args.timestep*args.skip) #in A/ps
+
+    dif = (lastpos-pos)
+    #check for crossing of pbc, if true, dif=(box_dim-|dif|) in direction opposite to dif
+    dif[:,0]=np.where(np.abs(dif[:,0])>ts.dimensions[0]*0.5, (-np.sign(dif[:,0]))*(ts.dimensions[0]-np.abs(dif[:,0])), dif[:,0])
+    dif[:,1]=np.where(np.abs(dif[:,1])>ts.dimensions[1]*0.5, (-np.sign(dif[:,1]))*(ts.dimensions[1]-np.abs(dif[:,1])), dif[:,1])
+    dif[:,2]=np.where(np.abs(dif[:,2])>ts.dimensions[2]*0.5, (-np.sign(dif[:,2]))*(ts.dimensions[2]-np.abs(dif[:,2])), dif[:,2])
+    vel = dif/(args.timestep*args.skip) #in A/ps
+    
+    
     lastpos=copy.deepcopy(pos)
 
-    if((ts.frame-1)%args.autocorlen==0): #this is a reference frame
+    if((ts.frame-(1*args.skip))%(args.autocorlen*args.skip)==0): #this is a reference frame
         refvel=vel
         k=0     #reset frames since reference
 
@@ -126,6 +131,7 @@ for ts in u.trajectory[::args.skip]:
 
     k+=1        #increment frames since reference
 
+
 #average, while gracefully handling division by 0
 with np.errstate(divide='ignore', invalid='ignore'):
         z_autocor = np.true_divide( z_autocor, N_in_slice )
@@ -138,6 +144,7 @@ z    = np.linspace(sliceW*0.5, u.dimensions[2]+sliceW*0.5, num=Nslices, endpoint
 time = np.arange(0, args.autocorlen)*args.timestep     #in ps
 X, Y = np.meshgrid(time, z)  # `plot_surface` expects `x` and `y` data to be 2D
 
+
 #plot z_aoutocor
 fig2 = plt.figure(figsize=(6,8), dpi=300)
 plt.suptitle("Velocity Autocorrelation")
@@ -145,6 +152,7 @@ ax1 = fig2.add_subplot(211, projection='3d') #2 rows, 1 column, plot number 1
 ax1.set_xlabel('Time (ps)')
 ax1.set_ylabel('Z-slice (A)')
 ax1.set_zlabel(r'Velocity Autocorrelation Z-component ($A^2/ps^2$)')
+ax1.set_zlim(-5, 20)
 ax1.plot_wireframe(X,Y, z_autocor)
 
 #plot xy_aoutocor
@@ -152,7 +160,8 @@ ax2 = fig2.add_subplot(212, projection='3d') #2 rows, 1 column, plot number 1
 ax2.set_xlabel('Time (ps)')
 ax2.set_ylabel('Z-slice (A)')
 ax2.set_zlabel(r'Velocity Autocorrelation XY-component ($A^2/ps^2$)')
-ax2.plot_wireframe(X,Y, xy_autocor)
+ax2.set_zlim(-10, 40)
+ax2.plot_surface(X,Y, xy_autocor)
 
 #plt.tight_layout(pad=1.0, w_pad=3.0, h_pad=1.0, rect=(0,0,1,0.95))
 fig2.savefig("vel_autocorr_z_slice.png")
@@ -162,7 +171,7 @@ plt.close(fig2)
 
 #Diffusion coefficient is the integral of velocity autocorrelation
 z_diff_coef  = np.sum( z_autocor, axis=1)
-xy_diff_coef = np.sum(xy_autocor, axis=1)
+xy_diff_coef = np.sum(xy_autocor, axis=1)/2
 
 fig3 = plt.figure(figsize=(6,8), dpi=300)
 plt.suptitle("Diffusion Coefficient")
