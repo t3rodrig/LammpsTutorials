@@ -61,7 +61,7 @@ parser.add_argument("-p","--topology", type=str,default="../liquid-vapor/data.sp
 parser.add_argument('-t',"--trajectory", type=str,default="traj_centered.dcd",help="Input trajectory file readable by MDAnalysis.")
 parser.add_argument('-s',"--skip", type=int,default=1,help="Process every nth frame of the trajectory")
 parser.add_argument('-dt',"--timestep", type=float,default=0.002,help="Timestep in ps.")
-parser.add_argument('-l',"--autocorlen", type=float,default=250,help="Length of autocorelations in frames. Reference frames are taken every this many frames.")
+parser.add_argument('-l',"--autocorlen", type=int,default=250,help="Length of autocorelations in frames. Reference frames are taken every this many frames.")
 args=parser.parse_args()
 
 
@@ -141,7 +141,7 @@ with np.errstate(divide='ignore', invalid='ignore'):
 
 #z-coordinates of the centers of the z-slices and time
 z    = np.linspace(sliceW*0.5, u.dimensions[2]+sliceW*0.5, num=Nslices, endpoint=False)
-time = np.arange(0, args.autocorlen)*args.timestep     #in ps
+time = np.arange(0, args.autocorlen)*args.timestep*args.skip     #in ps
 X, Y = np.meshgrid(time, z)  # `plot_surface` expects `x` and `y` data to be 2D
 
 
@@ -170,19 +170,19 @@ plt.close(fig2)
 
 
 #Diffusion coefficient is the integral of velocity autocorrelation
-z_diff_coef  = np.sum( z_autocor, axis=1)
-xy_diff_coef = np.sum(xy_autocor, axis=1)/2
+z_diff_coef  = np.sum( z_autocor, axis=1)   * 1.0e-4 * (args.timestep*args.skip)#in cm^2/s
+xy_diff_coef = np.sum(xy_autocor, axis=1)/2 * 1.0e-4 * (args.timestep*args.skip)#in cm^2/s
 
 fig3 = plt.figure(figsize=(6,8), dpi=300)
 plt.suptitle("Diffusion Coefficient")
 ax1 = fig3.add_subplot(211) #2 rows, 1 column, plot number 1
 ax1.set_xlabel('Z-slice (A)')
-ax1.set_ylabel(r'$D_\bot$ ($\mathrm{A}^2/\mathrm{ps}$)')
+ax1.set_ylabel(r'$D_\bot$ ($\mathrm{cm}^2/\mathrm{s}$)')
 ax1.plot(z, z_diff_coef, '-')
 
 ax2 = fig3.add_subplot(212) #2 rows, 1 column, plot number 1
 ax2.set_xlabel('Z-slice (A)')
-ax2.set_ylabel(r'$D_\parallel$ ($\mathrm{A}^2/\mathrm{ps}$)')
+ax2.set_ylabel(r'$D_\parallel$ ($\mathrm{cm}^2/\mathrm{s}$)')
 ax2.plot(z, xy_diff_coef, '-')
 
 plt.tight_layout(pad=1.0, w_pad=3.0, h_pad=1.0, rect=(0,0,1,0.95))
