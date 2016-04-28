@@ -55,7 +55,7 @@ def load_traj(top_file, traj_file):
 ###############
 
 #parse arguments
-parser=ap.ArgumentParser(description="Analyzes and plots a number of properties as a function of z-slice.",
+parser=ap.ArgumentParser(description="Analyzes and plots a velocity autocorrelation and diffusion components as a function of z-slice.",
                          formatter_class=ap.ArgumentDefaultsHelpFormatter) #better help
 parser.add_argument("-p","--topology", type=str,default="../liquid-vapor/data.spce.old.txt",help="Input topology file readable by MDAnalysis.")
 parser.add_argument('-t',"--trajectory", type=str,default="traj_centered.dcd",help="Input trajectory file readable by MDAnalysis.")
