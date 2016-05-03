@@ -31,7 +31,6 @@ fix   2 all nvt temp 300.0 300.0 200.0
 
 thermo_style    one
 thermo    100
-#thermo    10000
 
 #Stadardised output for easy loading by analysis scripts
 #LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
@@ -44,9 +43,7 @@ dump  2 all dcd 100 traj.dcd
 #This will require a custom parser to read, but is needed to get info about point dipoles
 #dump 5 all custom 100 traj.txt id mol type x y z ix iy iz q mux muy muz mu
 
-#Short run to generate some output we can analyze
-run   $(5e4)
-#run   $(5e6)
+run   $(5e6)
 #run 0
 
 write_dump all atom confout.lammpstrj modify scale no sort id
