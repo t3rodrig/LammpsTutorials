@@ -188,4 +188,7 @@ ax2.plot(z, xy_diff_coef, '-')
 plt.tight_layout(pad=1.0, w_pad=3.0, h_pad=1.0, rect=(0,0,1,0.95))
 fig3.savefig("diffusion_z_slice.png")
 plt.close(fig3)
+
+print ("Perpendicular Difusion in the middle is %f cm^2/s\n"%np.mean(z_diff_coef[int(0.4*Nslices) : int(0.6*Nslices)]))
+print ("Parallel Difusion in the middle is %f cm^2/s\n"%np.mean(xy_diff_coef[int(0.4*Nslices) : int(0.6*Nslices)]))
 exit()
