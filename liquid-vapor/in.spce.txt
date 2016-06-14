@@ -1,4 +1,12 @@
 # SPC/E water box 
+
+variable Nsbo equal 100         #number of steps between outputs
+variable Nsteps equal 5e6       #total number of steps in the simulation
+
+
+
+
+
 units   real  
 atom_style  full
 
@@ -33,24 +41,55 @@ fix   2 all nvt temp 300.0 300.0 200.0
 #fix   2 all npt temp 300.0 300.0 200.0 iso 1.0 1.0 5000.0
 
 
-thermo_style    one
-thermo    100
+
+
+thermo_style custom step temp epair emol etotal press lz   #this is equivalent to "thermo_style one" with length of the box added at the end
+thermo    ${Nsbo}
+
+#Set up pressure tensor components
+  #c_thermo_press[1] is the XX component of the pressure tensor; computed by "thermo_style custom ... press ..."
+variable xPress equal c_thermo_press[1] 
+variable yPress equal c_thermo_press[2] 
+variable zPress equal c_thermo_press[3]
+
+#Compute surface tension
+  #c_thermo_lz is the box length in the z-dimention; computed by "thermo_style custom ... lz"
+variable st equal 0.5*c_thermo_lz*(v_zPress-0.5*(v_xPress+v_yPress)) #in units of Kcal/(mole*Angstrom^2)
+
+  #average over all timesteps since last output and store in "f_st"
+fix st all ave/time 1 ${Nsbo} ${Nsbo} v_st
+
+  #save the surface tension to file
+dump 10 local ${Nsbo} traj.surfTension.dat f_st
+
+
+
+
+#One can also get pressure tensor at any finite subvolume of the simulation
+#box from atomic velocities, forces and positions without having
+#to re-evaluate the potential. I can do this later with python.
+#But meanwhile, let's prepare the output required for it.
+dump  11 all custom ${Nsbo} traj.data4PressTensor.dat id mol type x y z vx vy vz fx fy fz 
+
+
+
+
+
 
 #Stadardised output for easy loading by analysis scripts
 #LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
 write_dump all xyz init.xyz modify sort id element O H                 #save a 1 frame xyz file to be able to load topology in VMD
-dump  1 all custom 100 traj.lammpstrj id mol type x y z ix iy iz 
-dump  2 all dcd 100 traj.dcd
-#dump  3 all xtc 100 traj.xtc
-#dump  4 all xyz 100 traj.xyz
+dump  1 all custom ${Nsbo} traj.lammpstrj id mol type x y z ix iy iz 
+dump  2 all dcd ${Nsbo} traj.dcd
+#dump  3 all xtc ${Nsbo} traj.xtc
+#dump  4 all xyz ${Nsbo} traj.xyz
 
 #for point dipoles, when they are used, dump custom will be needed to save the dipole magnitudes and directions
 #This will require a custom parser to read, but is needed to get info about point dipoles
-#dump 5 all custom 100 traj.txt id mol type x y z ix iy iz q mux muy muz mu
+#dump 5 all custom ${Nsbo} traj.txt id mol type x y z ix iy iz q mux muy muz mu
 
 #Short run to generate some output we can analyze
-run   $(5e6)
-#run 0
+run   ${Nsteps}
 
 write_dump all atom confout.lammpstrj modify scale no sort id
 write_data "data.spce.new.txt"
