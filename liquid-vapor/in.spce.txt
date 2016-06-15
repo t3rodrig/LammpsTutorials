@@ -40,6 +40,7 @@ fix   2 all nvt temp 300.0 300.0 200.0
 
 
 
+
 thermo_style custom step temp epair emol etotal press lz   #this is equivalent to "thermo_style one" with length of the box added at the end
 thermo    ${Nsterm}
 
