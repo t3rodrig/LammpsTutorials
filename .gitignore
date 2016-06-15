@@ -2,10 +2,8 @@
 log.*
 traj.*
 *.dcd
+*.xyz
 *.bin
 *.new.*
 confout.*
 *.png
-*.xyz
-analysis/*.txt
-liquid-vapor/data.*frequent_output.*

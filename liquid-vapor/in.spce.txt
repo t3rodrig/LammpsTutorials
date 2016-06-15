@@ -1,6 +1,7 @@
 # SPC/E water box 
 
 variable Nsbo equal 100         #number of steps between outputs
+variable Nsterm equal 5000      #number of steps between printing thermo information
 variable Nsteps equal 5e6       #total number of steps in the simulation
 
 
@@ -29,8 +30,6 @@ angle_coeff 1 100.0 109.47
 
 special_bonds   lj/coul 0.0 0.0 0.5
 
-#read_data spce.data.old
-
 neighbor        2.0 bin
 neigh_modify  every 1 delay 0 check yes
 
@@ -38,13 +37,11 @@ timestep  2.0
 
 fix   1 all shake 0.0001 20 0 b 1 a 1
 fix   2 all nvt temp 300.0 300.0 200.0
-#fix   2 all npt temp 300.0 300.0 200.0 iso 1.0 1.0 5000.0
-
 
 
 
 thermo_style custom step temp epair emol etotal press lz   #this is equivalent to "thermo_style one" with length of the box added at the end
-thermo    ${Nsbo}
+thermo    ${Nsterm}
 
 #Set up pressure tensor components
   #c_thermo_press[1] is the XX component of the pressure tensor; computed by "thermo_style custom ... press ..."
@@ -83,12 +80,15 @@ dump  2 all dcd ${Nsbo} traj.dcd
 #dump  3 all xtc ${Nsbo} traj.xtc
 #dump  4 all xyz ${Nsbo} traj.xyz
 
+
 #for point dipoles, when they are used, dump custom will be needed to save the dipole magnitudes and directions
 #This will require a custom parser to read, but is needed to get info about point dipoles
 #dump 5 all custom ${Nsbo} traj.txt id mol type x y z ix iy iz q mux muy muz mu
 
+
 #Short run to generate some output we can analyze
 run   ${Nsteps}
+
 
 write_dump all atom confout.lammpstrj modify scale no sort id
 write_data "data.spce.new.txt"
