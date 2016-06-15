@@ -53,14 +53,13 @@ variable yPress equal c_thermo_press[2]
 variable zPress equal c_thermo_press[3]
 
 #Compute surface tension
-  #c_thermo_lz is the box length in the z-dimention; computed by "thermo_style custom ... lz"
-variable st equal 0.5*c_thermo_lz*(v_zPress-0.5*(v_xPress+v_yPress)) #in units of Kcal/(mole*Angstrom^2)
+  #lz is the box length in the z-dimention; it should be instantaneous and change in NPT simulations
+variable st equal 0.5*lz*(v_zPress-0.5*(v_xPress+v_yPress)) #in units of Kcal/(mole*Angstrom^2)
 
-  #average over all timesteps since last output and store in "f_st"
-fix st all ave/time 1 ${Nsbo} ${Nsbo} v_st
+  #average over all timesteps since last output and store in "f_st" and in file named "traj.surfTension.dat"
+fix st all ave/time 1 ${Nsbo} ${Nsbo} v_st file traj.surfTension.dat
 
-  #save the surface tension to file
-dump 10 local ${Nsbo} traj.surfTension.dat f_st
+
 
 
 
