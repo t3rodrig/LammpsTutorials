@@ -1,14 +1,23 @@
 # SPC/E water box 
 
-variable Nsbo equal 100         #number of steps between outputs
-variable Nsterm equal 5000      #number of steps between printing thermo information
-variable Nsteps equal 5e6       #total number of steps in the simulation
+variable Dt equal 2.0		# timestep, in fs
+variable Nsteps equal 5e6	# 2 * 5e6 = 1e7 fs (10 ns). total number of steps in the simulation
+
+variable Ndump equal 500	# 2 * 5e2 = 1e3 fs (1 ps). save coordinates every 1.0 ps
+
+variable Nevery equal 100	# use input values every this many timesteps
+variable Nfreq equal ${Nsteps}	# calculate averages every this many timesteps
+variable Nrepeat equal 0.5*v_Nfreq/${Nevery}	# calculate averages every this many timesteps
+
+variable Nprint equal 5000	# number of steps between printing thermo information
+
+variable Text equal 300		# reference temperature, in K
+
+variable Nsbo equal 100         	#number of steps between outputs
+variable Nsterm equal 5000      	#number of steps between printing thermo information
 
 
-
-
-
-units   real  
+units   real
 atom_style  full
 
 pair_style  lj/cut/coul/long 10.0 10.0
@@ -20,9 +29,9 @@ dihedral_style  none
 improper_style  none
 
 read_data "data.spce.old.txt"
-velocity  all create 300 432567 dist uniform
+velocity  all create ${Tex} 432567 dist uniform
 
-pair_coeff  1 1 0.15535 3.166
+pair_coeff  1 1 0.15535 3.166 
 pair_coeff  * 2 0.0000 0.0000 
 
 bond_coeff  1 1000.00 1.000
@@ -33,64 +42,46 @@ special_bonds   lj/coul 0.0 0.0 0.5
 neighbor        2.0 bin
 neigh_modify  every 1 delay 0 check yes
 
-timestep  2.0
+timestep	${Dt}
 
 fix   1 all shake 0.0001 20 0 b 1 a 1
-fix   2 all nvt temp 300.0 300.0 200.0
+fix   2 all nvt temp ${Text} ${Text}  200.0
 
 
-
-
-thermo_style custom step temp epair emol etotal press lz   #this is equivalent to "thermo_style one" with length of the box added at the end
-thermo    ${Nsterm}
-
-#Set up pressure tensor components
-  #c_thermo_press[1] is the XX component of the pressure tensor; computed by "thermo_style custom ... press ..."
+# Set up pressure tensor components
+# c_thermo_press[1] is the XX component of the pressure tensor
 variable xPress equal c_thermo_press[1] 
 variable yPress equal c_thermo_press[2] 
 variable zPress equal c_thermo_press[3]
 
-#Compute surface tension
-  #lz is the box length in the z-dimention; it should be instantaneous and change in NPT simulations
-variable st equal 0.5*lz*(v_zPress-0.5*(v_xPress+v_yPress)) #in units of Kcal/(mole*Angstrom^2)
-
-  #average over all timesteps since last output and store in "f_st" and in file named "traj.surfTension.dat"
-fix st all ave/time 1 ${Nsbo} ${Nsbo} v_st file traj.surfTension.dat
-
-
-
-
+# Compute surface tension
+variable A_in_m equal 1e-10 # Angstrom in meter
+variable atm_in_Pa equal 101325 # note: 1 Pa = 1 N/m^2
+variable N_in_mN equal 1e3 # Newton in milliNewton
+variable convFac equal ${A_in_m}*${atm_in_Pa}*${N_in_mN}
+# lz is the box length in the z-dimention
+variable st equal 0.5*lz*(v_zPress-0.5*(v_xPress+v_yPress))*${convFac} # in mN/m
+fix st all ave/time 50 1 50 v_st file surfTension.txt
 
 
-#One can also get pressure tensor at any finite subvolume of the simulation
-#box from atomic velocities, forces and positions without having
-#to re-evaluate the potential. I can do this later with python.
-#But meanwhile, let's prepare the output required for it.
-dump  11 all custom ${Nsbo} traj.data4PressTensor.dat id mol type x y z vx vy vz fx fy fz 
+# Stadardised output for easy loading by analysis scripts
+# LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
+dump  1 all custom ${Ndump} traj.lammpstrj id mol type x y z ix iy iz 
+dump  2 all dcd ${Ndump} traj.dcd
+#dump  3 all xtc ${Ndump} traj.xtc
+#dump  4 all xyz ${Ndump} traj.xyz
 
 
+# One can also get pressure tensor at any finite subvolume of the simulation
+# box from atomic velocities, forces and positions without having to re-evaluate the potential.
+dump  11 all custom ${Ndump} traj_xvf.lammpstrj id mol type x y z vx vy vz fx fy fz 
+
+thermo_style custom step temp epair emol etotal press #this is equivalent to "thermo_style one"
+thermo	${Nprint}
+
+run	${Nsteps}
 
 
-
-
-#Stadardised output for easy loading by analysis scripts
-#LAMMPS can output dcd, xtc, and xyz formats easily. MDAnalysis can read all of these.
-write_dump all xyz init.xyz modify sort id element O H                 #save a 1 frame xyz file to be able to load topology in VMD
-dump  1 all custom ${Nsbo} traj.lammpstrj id mol type x y z ix iy iz 
-dump  2 all dcd ${Nsbo} traj.dcd
-#dump  3 all xtc ${Nsbo} traj.xtc
-#dump  4 all xyz ${Nsbo} traj.xyz
-
-
-#for point dipoles, when they are used, dump custom will be needed to save the dipole magnitudes and directions
-#This will require a custom parser to read, but is needed to get info about point dipoles
-#dump 5 all custom ${Nsbo} traj.txt id mol type x y z ix iy iz q mux muy muz mu
-
-
-#Short run to generate some output we can analyze
-run   ${Nsteps}
-
-
-write_dump all atom confout.lammpstrj modify scale no sort id
+write_dump all atom "confout.lammpstrj" modify scale no sort id
 write_data "data.spce.new.txt"
 write_restart "rst.spce.new.bin"
