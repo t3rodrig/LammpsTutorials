@@ -13,9 +13,6 @@ variable Nprint equal 5000	# number of steps between printing thermo information
 
 variable Text equal 300		# reference temperature, in K
 
-variable Nsbo equal 100         	#number of steps between outputs
-variable Nsterm equal 5000      	#number of steps between printing thermo information
-
 
 units   real
 atom_style  full
@@ -29,7 +26,7 @@ dihedral_style  none
 improper_style  none
 
 read_data "data.spce.old.txt"
-velocity  all create ${Tex} 432567 dist uniform
+velocity  all create ${Text} 432567 dist uniform
 
 pair_coeff  1 1 0.15535 3.166 
 pair_coeff  * 2 0.0000 0.0000 
