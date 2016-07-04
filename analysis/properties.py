@@ -15,7 +15,6 @@ except ImportError:
         "https://github.com/MDAnalysis/mdanalysis/wiki/Install \n" )
 
 import numpy as np
-import scipy as sp
 import matplotlib
 matplotlib.use('Agg') #don't create a tk window to show figures. Just save them as files.
 import matplotlib.pyplot as plt
@@ -74,13 +73,13 @@ sumV=0
 #itterate through frames
 for ts in u.trajectory:
     #calculate the total dipole moment of the simulation cell
-    
+
     #com=all_atoms.center_of_mass(pbc=True)  #wrap all atoms into box and return the center of mass
     #shift=u.dimensions[:3]*0.5 - com
     coords=all_atoms.coordinates()          #coordinates of the atoms, passed by reference
     #coords+=shift                           #center com in box so that liquid doesn't drift on z-axis
     #all_atoms.pack_into_box()               #rewrap if any atoms moved outside box beacuse of centering
-        
+
     temp=np.multiply(all_atoms.charges[:,np.newaxis], coords) #Q*r
     mu=np.sum(temp, axis=0) #sum(Q*r)
     muMag=np.linalg.norm(mu)/0.20819434 #magnitude in Debye
@@ -156,16 +155,16 @@ for res in W_res:
     mols.append(all_atoms.select_atoms("resid %d"%res.id))
 print("There are", len(W_res), "molecules.\n")
 lastSliceID=np.zeros(len(mols), dtype=int)
-    
+
 #analyze trajectory
 for ts in u.trajectory:
     if(ts.frame%args.skip!=0): continue  #use for debug to make code skip frames
     Nframes+= 1
     print((CURSOR_UP_ONE + ERASE_LINE),"Processing frame",ts.frame,"of",len(u.trajectory))
-    
+
     #for molecular dipole moment, molecules have to be wrapped so they stay together
     all_atoms.wrap(compound='residues', center='com')
-    
+
     for i in range(len(mols)):
         grp=mols[i]
         com = grp.center_of_mass() #this determined which slice the molecule is in
@@ -176,8 +175,8 @@ for ts in u.trajectory:
             if(lastSliceID[i] > sliceID):
                 left_movement[lastSliceID[i]]+=1
             lastSliceID[i] = sliceID
-            
-        
+
+
         #compute molecular dipole in Debye
         mol_mu=np.sum(np.multiply(grp.charges[:,np.newaxis], grp.coordinates()), axis=0)/0.20819434
         #deep copy to avoid passing by reference and data being overwritten 1 line later
