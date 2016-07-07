@@ -1,0 +1,20 @@
+#!/bin/bash
+#PBS -S /bin/bash
+
+#PBS -l walltime=24:00:00
+#PBS -l procs=64
+#PBS -l mem=16gb
+#PBS -o log.run.txt
+#PBS -e error.log
+
+module purge
+module load intel/14.0.2.144
+module load intel/ompi/1.6.5
+module load fftw/3.3.4-intel14
+
+cd $PBS_O_WORKDIR
+echo "Current working directory is `pwd`"
+
+echo "Starting run at: `date`"
+mpiexec -n 64 $HOME/bin/lmp -sc log.lammps.txt -in in.spce.txt
+echo "Job finished with exit code $? at: `date`"
